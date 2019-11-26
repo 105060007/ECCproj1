@@ -5,6 +5,8 @@ unsigned long long RANV;
 int RANI = 0;
 double n1, n2;
 
+double Ranq1();
+
 // output 2 indep. normal RV n1 & n2
 void normal(double delta){
     double x1, x2, s;
