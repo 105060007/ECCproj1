@@ -2,7 +2,7 @@
 
 #define TRUNCATION_LENGTH 32
 
-enum{
+enum DECISIONS{
     HARD,               // decode on a BSC, SNR: 1~6dB
     UNQUANTIZED_SOFT    // 1~4dB, increment = 0.5dB
 };
