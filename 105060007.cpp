@@ -15,16 +15,20 @@ using namespace std;
 
 int N = 33;
 double SNR;
+double var = 0.3981; // variance
 
 vector<bool> u;
 // bool u[63] = {true, false, false, false, false, false}; // input info bits
-vector<bool> x1;
-vector<bool> x2;
+vector<bool> x1, x2;
 
 // get user input
 void Initialize(){
+    double SNRindB;
     cin >> N;
-    cin >> SNR;
+    cin >> SNRindB;
+    // 10 log10(SNR) = SNRindB
+    SNR = pow(10.0, SNRindB/10);
+    var = 1/SNR;
     cin >> SEED;
 }
 
@@ -32,12 +36,9 @@ void Initialize(){
 void InputGenerator(){
     u.resize(N+31, false);
     u[0] = true;
-    // u[0] = true; u[1] = false; u[2] = false; 
-    // u[3] = false; u[4] = false; u[5] = false;
     cout << "info: ";
-    for(int i=0; i<=N+31-6; i++){
+    for(int i=0; i<=N+31-6; i++)
         u[i+6] = (u[i] + u[i+1]) % 2;
-    }
     for(int i=0; i<N+31; i++) cout << u[i] << " ";
 }
 
@@ -45,13 +46,9 @@ void InputGenerator(){
 void Encode(){      
     x1.resize(N+31);
     x2.resize(N+31);
+    
     // initial state=000000 + initial input=100000
-    // bool tmp[12] = {0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0};
-    // for(int i=6; i<12; i++){
-    //     x1[i-6] = (tmp[i] + tmp[i-2] + tmp[i-3] + tmp[i-5] + tmp[i-6])%2;
-    //     x2[i-6] = (tmp[i] + tmp[i-1] + tmp[i-2] + tmp[i-3] + tmp[i-6])%2;
-    // }
-
+    // use queue to store state?(feed forward shift reg)
     for(int i=0; i<6; i++) u.insert(u.begin(), false);
 
     for(int i=6; i<N+31+6; i++){
@@ -68,7 +65,14 @@ void Encode(){
 int main(){
     // Initialize();
     InputGenerator();
-    
     Encode();
+
+    // channel output
+    // y1 = x1 + n1;
+    // y2 = x2 + n2;
+    for(int i=0; i<3; i++){
+        normal(pow(var, 0.5));
+        cout << "n1=" << n1 << ", n2=" << n2 << endl;
+    }
 
 }

@@ -1,6 +1,13 @@
 #include <math.h>
 
-unsigned long long SEED;
+#define TRUNCATION_LENGTH 32
+
+enum{
+    HARD,               // decode on a BSC, SNR: 1~6dB
+    UNQUANTIZED_SOFT    // 1~4dB, increment = 0.5dB
+};
+
+unsigned long long SEED = 666;
 unsigned long long RANV;
 int RANI = 0;
 double n1, n2;
