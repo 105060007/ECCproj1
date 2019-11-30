@@ -7,10 +7,28 @@ using namespace std;
 
 /*--------------------------------------------------------*/
 // input:
-//     # of decoded bits N
-//     the bit signal-to-noise ratio SNR (in dB)
-//     the seed for the random generator SEED
-//     hard/soft decsion
+//      # of decoded bits N
+//      the bit signal-to-noise ratio SNR (in dB)
+//      the seed for the random generator SEED
+//      hard/soft decsion
+
+// viterbi decode:
+//      metric = the distance of the shortest path up to now
+//      survivor = the shortest path up to now
+//      state s = (s1, s2, ... , s5, s6)
+//          input first fed to s1, shift to right
+//      same metric => choose the upmost branch as survivor
+//      
+//  存info bits VS 存比較結果
+//  if  當下output結果，最後輸出path
+//      Use double linked list~?
+//      Node: whichinput, metric~~~~??
+//      pointer: last, next
+//  if  當下
+
+// trellis diagram:
+//      2^6 = 64 states in total in Trellis diagram
+//      
 /*--------------------------------------------------------*/
 
 int N = 33;
@@ -65,38 +83,35 @@ void Encode(){
     for(int i=0; i<N+31; i++) cout << x2[i] << " "; 
 }
 
-void HorSDecision(){
+void AWGN(){
     double a, b;
-    if(decision == HARD){
-        for(int i=0; i<N+31; i++){
-            normal(pow(var, 0.5));
-            a = x1[i] + n1;
-            b = x2[i] + n2;
+    // normalize the input to AWGN to +-1
+    for(int i=0; i<N+31; i++){
+        a = (x1[i]==0) ? 1 : -1;
+        b = (x2[i]==0) ? 1 : -1;
 
+        normal(pow(var, 0.5));
+        a = a + n1;
+        b = b + n2;
+
+        if(decision == HARD){
             Yhat1[i] = (a < 0) ? -1 : 1;
             Yhat2[i] = (b < 0) ? -1 : 1;
         }
-    }
-    else if(decision == UNQUANTIZED_SOFT){
-        for(int i=0; i<N+31; i++){
-            normal(pow(var, 0.5));
-            a = x1[i] + n1;
-            b = x2[i] + n2;
-
-            // soft decision...
+        else if(decision == UNQUANTIZED_SOFT){
+            Yhat1[i] = a;
+            Yhat2[i] = b;
         }
+        else cout << "which decision~~~:3?";
     }
-    else{
-        cout << "which decision~~~:3?";
-    }
-
 }
 
 int main(){
     // Initialize();
     InputGenerator();
     Encode();
-    HorSDecision();
+    AWGN();
 
     // Viterbi Decoding
+
 }
