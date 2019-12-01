@@ -3,6 +3,7 @@
 #include <string.h>
 #include <queue>
 #include "./105060007.h"
+#include "./LinkedList.h"
 using namespace std;
 
 /*--------------------------------------------------------*/
@@ -112,6 +113,13 @@ int main(){
     Encode();
     AWGN();
 
-    // Viterbi Decoding
+    // Viterbi Decoding, recrived = Yhat1[], Yhat2[]
+    // Node first = Node("000000", 0);
+    // string lastState = "000000";
+    // for(int i=0; i<N+31; i++){
+    //     string a = lastState.insert(0, lastState);
+    //     Node *newNode = new Node()
 
+        
+    // }
 }
