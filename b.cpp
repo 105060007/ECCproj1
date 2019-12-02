@@ -7,17 +7,20 @@
 #include "bitset"
 using namespace std;
 
-int N = 1;
+int N = 10;
 double SNR;
 double var = 0.3981;        // variance
 int decision = HARD;
 const int StateNum = 64;
 int a[StateNum][2];         // 現在這state吃0/1換到下一個state的output
-queue<int> q;               // state sequence
+vector<int> q;              // state sequence
 
 vector<bool> u;
 vector<bool> x1, x2;
 vector<double> Yhat1, Yhat2;    // (AWGN) channel output
+
+std::stack<int> out1;
+std::stack<int> out2;
 
 // get user input
 void Initialize(){
@@ -50,12 +53,12 @@ void InputGenerator(){
         state.push(last);
     }
 
-    std::cout << "state~~~~" << endl;
+    cout << "state~~~~" << endl;
     for(int i=0; i<state.size();){
-        std::cout << state.front() << " ";
+        cout << state.front() << " ";
         state.pop();
     }
-    std::cout << endl;
+    cout << endl;
 }
 
 // Encode the information sequence
@@ -71,9 +74,9 @@ void Encode(){
         x2[i-6] = (u[i] + u[i-1] + u[i-2] + u[i-3] + u[i-6])%2;
     }
 
-    std::cout << "received y: " << endl;
-    for(int i=0; i<N+31; i++) std::cout << x1[i] << x2[i] << " ";
-    std::cout << endl;
+    cout << "received y: " << endl;
+    for(int i=0; i<N+31; i++) cout << x1[i] << x2[i] << " ";
+    cout << endl;
 }
 
 void AWGN(){
@@ -97,7 +100,7 @@ void AWGN(){
             Yhat1[i] = tmp1;
             Yhat2[i] = tmp2;
         }
-        else std::cout << "which decision~~~:3?";
+        else cout << "which decision~~~:3?";
     }
 }
 
@@ -113,7 +116,6 @@ void InitializeA(){
                      + (1 + x[0] + x[1] + x[2] + x[5])%2;
     }
 }
-
 
 // 在第t個，output結果 vs AWGN encoded結果之branch metric
 double BranchMetric(int output, int t){
@@ -139,50 +141,77 @@ double BranchMetric(int output, int t){
 }
 
 void decode(){
-    std::cout << endl << "Decode~" << endl;
-    queue<int> decodedY;
+    cout << endl << "Decode~" << endl;
+    q.resize(N+31);
     
-    double metric[N+32][StateNum];            // metric so far
-    // int LastState[N+31][StateNum];            // 上一個state是誰~
-    int nextState[N+31][StateNum];
+    double metric[N+31][StateNum];            // metric so far
+    int LastState[N+31][StateNum];            // 上一個state是誰~
 
     InitializeA();
-    for(int j=0; j<StateNum; ++j) metric[0][j] = 10000;
-    metric[0][0] = 0;
-    q.push(0);
     for (int t=0; t<N+31; ++t){
         for (int j=0; j<StateNum; ++j){
-            // 存下一步跟最小metric
-            // currentState = (s6 s5 ... s2 s1), 前一個state可能為(0 s6 ... s2)或(1 s6 ... s2)
-            std::bitset<6> currentState(j);
-            std::bitset<6> nextState0, nextState1;
-            nextState0 = currentState;
-            nextState0 <<= 1;
-            nextState1 = nextState0;
-            nextState1.set(0);
-
-            // cout << nextState0 << " " << nextState1 << endl;
-
-            double m0 = BranchMetric(a[currentState.to_ulong()][0], t);
-            double m1 = BranchMetric(a[currentState.to_ulong()][1], t);
-
-            // 選擇metric較小的
-            if(m0 <= m1){
-                metric[t+1][nextState0.to_ulong()] = metric[t][j] + m0;
-                nextState[t][j] = nextState0.to_ulong();
-                // q.push(nextState0.to_ulong());
-                // decodedY.push(a[currentState.to_ulong()][0]);
+            if (t == 0){
+                metric[t][j] = 10000;
+                if(j==0) metric[t][j] =0;
             }
             else{
-                metric[t+1][nextState1.to_ulong()] = metric[t][j] + m1;
-                nextState[t][j] = nextState1.to_ulong();
-                // q.push(nextState1.to_ulong());
-                // decodedY.push(a[currentState.to_ulong()][1]);
+                // 存前一步跟最小metric
+                // currentState = (s6 s5 ... s2 s1), 前一個state可能為(0 s6 ... s2)或(1 s6 ... s2)
+                std::bitset<6> currentState(j);
+                std::bitset<6> lastState0, lastState1;
+                lastState0 = currentState;
+                lastState0 >>= 1;
+                lastState1 = lastState0;
+                lastState1.set(5);
+
+                double m0 = metric[t-1][lastState0.to_ulong()]+BranchMetric(a[lastState0.to_ulong()][currentState[0]], t-1);
+                double m1 = metric[t-1][lastState1.to_ulong()]+BranchMetric(a[lastState1.to_ulong()][currentState[0]], t-1);
+
+                // 選擇metric較小的
+                if(m0 <= m1){
+                    metric[t][j] = m0;
+                    LastState[t][j] = lastState0.to_ulong();
+                }
+                else{
+                    metric[t][j] = m1;
+                    LastState[t][j] = lastState1.to_ulong();
+                }
             }
-            
         }   
     }
+
+    double p = 100000;
+    int current = 0;
+    for (int j=0; j<StateNum; j++){
+        if (metric[N+31-1][j] < p){
+            p = metric[N+31-1][j];      // final length
+            q[N+31-1] = j;              // the last state
+            current = j;
+        }
+    }
     
+    out1.push(a[q[N+31-1]][current%2]/10);
+    out2.push(a[q[N+31-1]][current%2]%10);
+
+    // find the state sequence
+    for (int t=N+31-1; t>0; --t){
+        q[t-1] = LastState[t][q[t]];
+        current = q[t];
+        out1.push(a[q[t-1]][current%2]/10);
+        out2.push(a[q[t-1]][current%2]%10);
+    }
+    
+    cout << "state: " << endl;
+    for(int i=0; i<N+31; i++) cout << bitset<6>(q[i]) << " ";
+    cout << endl;
+    
+    
+    
+    for(int i=0; i<out1.size();){
+        std::cout << out1.top() << out2.top() << " ";
+        out1.pop();
+        out2.pop();
+    }
 }
 
 
