@@ -4,6 +4,8 @@
 #include <queue>
 #include "./105060007.h"
 #include "./LinkedList.h"
+#include "./Viterbi.h"
+#include "bitset"
 using namespace std;
 
 /*--------------------------------------------------------*/
@@ -20,19 +22,9 @@ using namespace std;
 //          input first fed to s1, shift to right
 //      same metric => choose the upmost branch as survivor
 //      
-//  存info bits VS 存比較結果
-//  if  當下output結果，最後輸出path
-//      Use double linked list~?
-//      Node: whichinput, metric~~~~??
-//      pointer: last, next
-//  if  當下
-
-// trellis diagram:
-//      2^6 = 64 states in total in Trellis diagram
-//      
 /*--------------------------------------------------------*/
 
-int N = 33;
+int N = 1;
 double SNR;
 double var = 0.3981; // variance
 int decision = HARD;
@@ -41,6 +33,7 @@ vector<bool> u;
 // bool u[63] = {true, false, false, false, false, false}; // input info bits
 vector<bool> x1, x2;
 vector<double> Yhat1, Yhat2;    // (AWGN) channel output
+queue< bitset<6>> state;
 
 // get user input
 void Initialize(){
@@ -56,12 +49,29 @@ void Initialize(){
 
 // generate the information bits
 void InputGenerator(){
+    state.push(bitset<6>(0));
     u.resize(N+31, false);
     u[0] = true;
     cout << "info: ";
-    for(int i=0; i<=N+31-6; i++)
-        u[i+6] = (u[i] + u[i+1]) % 2;
-    // for(int i=0; i<N+31; i++) cout << u[i] << " ";
+    for(int i=0; i<=N+31-6; i++) u[i+6] = (u[i] + u[i+1]) % 2;
+    for(int i=0; i<N+31; i++){
+        bitset<6> last = state.back();
+        last <<= 1;
+        if(u[i]) last.set(0);
+        state.push(last);
+    }
+        
+    
+    for(int i=0; i<N+31; i++) cout << u[i] << " ";
+    cout << endl;
+
+    
+        cout << "state~~~~" << endl;
+    for(int i=0; i<state.size();){
+        cout << state.front() << " ";
+        state.pop();
+    }
+    cout << endl;
 }
 
 // Encode the information sequence
@@ -69,8 +79,7 @@ void Encode(){
     x1.resize(N+31);
     x2.resize(N+31);
     
-    // initial state=000000 + initial input=100000
-    // use queue to store state?(feed forward shift reg)
+    // initial state=000000
     for(int i=0; i<6; i++) u.insert(u.begin(), false);
 
     for(int i=6; i<N+31+6; i++){
@@ -78,10 +87,11 @@ void Encode(){
         x2[i-6] = (u[i] + u[i-1] + u[i-2] + u[i-3] + u[i-6])%2;
     }
 
-    cout << endl << "x1: ";
-    for(int i=0; i<N+31; i++) cout << x1[i] << " ";
-    cout << endl << "x2: ";
-    for(int i=0; i<N+31; i++) cout << x2[i] << " "; 
+    // cout << endl << "x1: ";
+    // for(int i=0; i<N+31; i++) cout << x1[i] << " ";
+    // cout << endl << "x2: ";
+    // for(int i=0; i<N+31; i++) cout << x2[i] << " "; 
+    for(int i=0; i<N+31; i++) cout << x1[i] << x2[i] << " ";
 }
 
 void AWGN(){
@@ -98,6 +108,9 @@ void AWGN(){
         if(decision == HARD){
             Yhat1[i] = (a < 0) ? -1 : 1;
             Yhat2[i] = (b < 0) ? -1 : 1;
+
+            Yhat1[i] = (Yhat1[i] == 1) ? 0 : 1;
+            Yhat2[i] = (Yhat2[i] == 1) ? 0 : 1;
         }
         else if(decision == UNQUANTIZED_SOFT){
             Yhat1[i] = a;
@@ -111,15 +124,7 @@ int main(){
     // Initialize();
     InputGenerator();
     Encode();
-    AWGN();
-
-    // Viterbi Decoding, recrived = Yhat1[], Yhat2[]
-    // Node first = Node("000000", 0);
-    // string lastState = "000000";
-    // for(int i=0; i<N+31; i++){
-    //     string a = lastState.insert(0, lastState);
-    //     Node *newNode = new Node()
-
-        
-    // }
+    // AWGN();
+    
+    decode(N+31);
 }
