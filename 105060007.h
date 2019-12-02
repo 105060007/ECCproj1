@@ -7,7 +7,7 @@ enum DECISIONS{
     UNQUANTIZED_SOFT    // 1~4dB, increment = 0.5dB
 };
 
-unsigned long long SEED = 666;
+unsigned long long SEED;
 unsigned long long RANV;
 int RANI = 0;
 double n1, n2;

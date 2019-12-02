@@ -2,11 +2,20 @@
 #include "vector"
 #include <string.h>
 #include <queue>
+#include <stack>
 #include "./105060007.h"
-#include "./LinkedList.h"
+// #include "./LinkedList.h"
 #include "./Viterbi.h"
 #include "bitset"
 using namespace std;
+
+struct Trellis 
+{
+    queue<bool> out1, out2;
+    queue<bitset<6> > lastState;
+    queue<bitset<6> > currState;
+    double metric = 0;
+};
 
 /*--------------------------------------------------------*/
 // input:
@@ -32,11 +41,17 @@ int decision = HARD;
 vector<bool> u;
 // bool u[63] = {true, false, false, false, false, false}; // input info bits
 vector<bool> x1, x2;
-vector<double> Yhat1, Yhat2;    // (AWGN) channel output
-queue< bitset<6>> state;
+vector<double> Yhat1;
+vector<double> Yhat2;    // (AWGN) channel output
+
+// queue< bitset<6> > state;
+
+// Trellis tre[64];
 
 // get user input
 void Initialize(){
+    // tre.currState = state;
+
     double SNRindB;
     cin >> N;
     cin >> SNRindB;
@@ -49,29 +64,29 @@ void Initialize(){
 
 // generate the information bits
 void InputGenerator(){
-    state.push(bitset<6>(0));
+    // state.push(bitset<6>(0));
     u.resize(N+31, false);
     u[0] = true;
-    cout << "info: ";
+    // cout << "info: ";
     for(int i=0; i<=N+31-6; i++) u[i+6] = (u[i] + u[i+1]) % 2;
-    for(int i=0; i<N+31; i++){
-        bitset<6> last = state.back();
-        last <<= 1;
-        if(u[i]) last.set(0);
-        state.push(last);
-    }
+    // for(int i=0; i<N+31; i++){
+    //     bitset<6> last = state.back();
+    //     last <<= 1;
+    //     if(u[i]) last.set(0);
+    //     state.push(last);
+    // }
         
     
-    for(int i=0; i<N+31; i++) cout << u[i] << " ";
-    cout << endl;
+    // for(int i=0; i<N+31; i++) cout << u[i] << " ";
+    // cout << endl;
 
     
-        cout << "state~~~~" << endl;
-    for(int i=0; i<state.size();){
-        cout << state.front() << " ";
-        state.pop();
-    }
-    cout << endl;
+    // cout << "state~~~~" << endl;
+    // for(int i=0; i<state.size();){
+    //     cout << state.front() << " ";
+    //     state.pop();
+    // }
+    // cout << endl;
 }
 
 // Encode the information sequence
@@ -91,7 +106,7 @@ void Encode(){
     // for(int i=0; i<N+31; i++) cout << x1[i] << " ";
     // cout << endl << "x2: ";
     // for(int i=0; i<N+31; i++) cout << x2[i] << " "; 
-    for(int i=0; i<N+31; i++) cout << x1[i] << x2[i] << " ";
+    // for(int i=0; i<N+31; i++) cout << x1[i] << x2[i] << " ";
 }
 
 void AWGN(){
@@ -106,11 +121,8 @@ void AWGN(){
         b = b + n2;
 
         if(decision == HARD){
-            Yhat1[i] = (a < 0) ? -1 : 1;
-            Yhat2[i] = (b < 0) ? -1 : 1;
-
-            Yhat1[i] = (Yhat1[i] == 1) ? 0 : 1;
-            Yhat2[i] = (Yhat2[i] == 1) ? 0 : 1;
+            Yhat1[i] = (a < 0) ? 0 : 1;
+            Yhat2[i] = (b < 0) ? 0 : 1;
         }
         else if(decision == UNQUANTIZED_SOFT){
             Yhat1[i] = a;
@@ -120,11 +132,32 @@ void AWGN(){
     }
 }
 
+// void Decode(){
+//     queue<bool> out1, out2;
+//     queue<bitset<6> > lastState, currState;
+
+//     for(int j=0; j<64; j++){
+//         tre[0].currState.push(bitset<6>(j));
+//     }
+//     for(int t=1; t<N+31; t++){
+//         for(int j=0; j<64; j++){
+//             // AWGN out Yhat1, Yhat1
+//             // tre[t].metric += 
+//         }
+//         tre[t].out1 = out1;
+//         tre[t].out2 = out2;
+//         tre[t].lastState = lastState;
+//         tre[t].currState = currState;
+//     }
+// }
+
+
+
 int main(){
     // Initialize();
     InputGenerator();
     Encode();
-    // AWGN();
+    AWGN();
     
-    decode(N+31);
+    decode(Yhat1, Yhat2, N+31, decision);
 }
